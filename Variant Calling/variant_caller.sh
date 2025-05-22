@@ -12,7 +12,7 @@ echo "============================================"
 echo "      Variant Calling Pipeline Launcher      "
 echo "============================================"
 
-# --- Conda Setup ---
+# --- Conda Setup --- #
 ENV_NAME="varcall_env"
 
 if ! command -v conda &> /dev/null; then
@@ -31,13 +31,13 @@ fi
 eval "$(conda shell.bash hook)"
 conda activate "$ENV_NAME"
 
-# --- User Input ---
+# --- User Input --- #
 read -rp "Enter path to reference genome (FASTA): " REF
 read -rp "Enter path to read 1 (FASTQ): " READ1
 read -rp "Enter path to read 2 (FASTQ, leave empty for single-end): " READ2
 read -rp "Enter output prefix (e.g. sample1): " OUTPREFIX
 
-# --- Input Validation ---
+# --- Input Validation --- #
 for file in "$REF" "$READ1"; do
     if [ ! -f "$file" ]; then
         echo "[ERROR] File not found: $file"
@@ -50,11 +50,11 @@ if [ -n "$READ2" ] && [ ! -f "$READ2" ]; then
     exit 1
 fi
 
-# --- Logging ---
+# --- Logging --- #
 LOGFILE="varcall_${OUTPREFIX}_$(date +%Y%m%d_%H%M%S).log"
 exec > >(tee -i "$LOGFILE") 2>&1
 
-# --- Index Reference (if needed) ---
+# --- Index Reference (if needed) --- #
 if [ ! -f "${REF}.bwt" ]; then
     echo "[INFO] Indexing reference genome..."
     bwa index "$REF"
@@ -62,7 +62,7 @@ else
     echo "[INFO] Reference already indexed."
 fi
 
-# --- Alignment ---
+# --- Alignment --- #
 echo "[INFO] Aligning reads with BWA..."
 if [ -z "$READ2" ]; then
     bwa mem "$REF" "$READ1" > "${OUTPREFIX}.sam"
@@ -70,12 +70,12 @@ else
     bwa mem "$REF" "$READ1" "$READ2" > "${OUTPREFIX}.sam"
 fi
 
-# --- SAM to Sorted BAM ---
+# --- SAM to Sorted BAM --- #
 echo "[INFO] Converting SAM to sorted BAM..."
 samtools view -bS "${OUTPREFIX}.sam" | samtools sort -o "${OUTPREFIX}.sorted.bam"
 samtools index "${OUTPREFIX}.sorted.bam"
 
-# --- Coverage and Depth ---
+# --- Coverage and Depth --- #
 echo "[INFO] Calculating per-base depth..."
 samtools depth -a "${OUTPREFIX}.sorted.bam" > "${OUTPREFIX}.depth.txt"
 
@@ -99,13 +99,13 @@ echo "[RESULT] Breadth of coverage: ${COVERAGE_PERCENT}%"
 echo -e "Average_Depth\tBreadth_of_Coverage(%)" > "${OUTPREFIX}.coverage_summary.txt"
 echo -e "${AVG_DEPTH}\t${COVERAGE_PERCENT}" >> "${OUTPREFIX}.coverage_summary.txt"
 
-# --- Variant Calling ---
+# --- Variant Calling --- #
 echo "[INFO] Calling variants with bcftools..."
 bcftools mpileup -Ou -f "$REF" "${OUTPREFIX}.sorted.bam" | \
     bcftools call -mv -Ob -o "${OUTPREFIX}.bcf"
 bcftools view "${OUTPREFIX}.bcf" > "${OUTPREFIX}.vcf"
 
-# --- Done ---
+# --- Done --- #
 echo "============================================"
 echo "      Pipeline completed successfully!       "
 echo "============================================"
