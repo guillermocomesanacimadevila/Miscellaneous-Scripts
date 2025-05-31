@@ -3,7 +3,6 @@
 #============================================#
 # Variant Calling Pipeline with Coverage
 # Author: Guillermo Comesaña Cimadevila
-# Date: $(date +%F)
 #============================================#
 
 set -euo pipefail
