@@ -36,6 +36,16 @@ read -rp "Enter path to read 1 (FASTQ): " READ1
 read -rp "Enter path to read 2 (FASTQ, leave empty for single-end): " READ2
 read -rp "Enter output prefix (e.g. sample1): " OUTPREFIX
 
+# --- Decompress gzipped inputs if necessary --- #
+for var in REF READ1 READ2; do
+    f="${!var}"
+    if [[ -n "$f" && "$f" == *.gz ]]; then
+        echo "[INFO] Decompressing $f..."
+        gunzip -k "$f"
+        eval "$var=\"${f%.gz}\""
+    fi
+done
+
 # --- Input Validation --- #
 for file in "$REF" "$READ1"; do
     if [ ! -f "$file" ]; then
@@ -104,13 +114,21 @@ bcftools mpileup -Ou -f "$REF" "${OUTPREFIX}.sorted.bam" | \
     bcftools call -mv -Ob -o "${OUTPREFIX}.bcf"
 bcftools view "${OUTPREFIX}.bcf" > "${OUTPREFIX}.vcf"
 
+# --- Compress Output Files --- #
+echo "[INFO] Compressing output files..."
+gzip -f "${OUTPREFIX}.sam" \
+        "${OUTPREFIX}.depth.txt" \
+        "${OUTPREFIX}.coverage_summary.txt" \
+        "${OUTPREFIX}.vcf"
+
 # --- Done --- #
 echo "============================================"
 echo "      Pipeline completed successfully!       "
 echo "============================================"
-echo "  Output files:"
+echo "  Output files (compressed):"
 echo "    - Sorted BAM: ${OUTPREFIX}.sorted.bam"
-echo "    - Depth file: ${OUTPREFIX}.depth.txt"
-echo "    - Coverage summary: ${OUTPREFIX}.coverage_summary.txt"
-echo "    - VCF: ${OUTPREFIX}.vcf"
+echo "    - Depth file: ${OUTPREFIX}.depth.txt.gz"
+echo "    - Coverage summary: ${OUTPREFIX}.coverage_summary.txt.gz"
+echo "    - VCF: ${OUTPREFIX}.vcf.gz"
+echo "    - SAM: ${OUTPREFIX}.sam.gz"
 echo "    - Log: ${LOGFILE}"
