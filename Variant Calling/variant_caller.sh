@@ -36,6 +36,10 @@ read -rp "Enter path to read 1 (FASTQ): " READ1
 read -rp "Enter path to read 2 (FASTQ, leave empty for single-end): " READ2
 read -rp "Enter output prefix (e.g. sample1): " OUTPREFIX
 
+# --- Output Directory --- #
+OUTDIR="../Results"
+mkdir -p "$OUTDIR"
+
 # --- Decompress gzipped inputs if necessary --- #
 for var in REF READ1 READ2; do
     f="${!var}"
@@ -60,7 +64,7 @@ if [ -n "$READ2" ] && [ ! -f "$READ2" ]; then
 fi
 
 # --- Logging --- #
-LOGFILE="varcall_${OUTPREFIX}_$(date +%Y%m%d_%H%M%S).log"
+LOGFILE="${OUTDIR}/varcall_${OUTPREFIX}_$(date +%Y%m%d_%H%M%S).log"
 exec > >(tee -i "$LOGFILE") 2>&1
 
 # --- Index Reference (if needed) --- #
@@ -74,24 +78,24 @@ fi
 # --- Alignment --- #
 echo "[INFO] Aligning reads with BWA..."
 if [ -z "$READ2" ]; then
-    bwa mem "$REF" "$READ1" > "${OUTPREFIX}.sam"
+    bwa mem "$REF" "$READ1" > "${OUTDIR}/${OUTPREFIX}.sam"
 else
-    bwa mem "$REF" "$READ1" "$READ2" > "${OUTPREFIX}.sam"
+    bwa mem "$REF" "$READ1" "$READ2" > "${OUTDIR}/${OUTPREFIX}.sam"
 fi
 
 # --- SAM to Sorted BAM --- #
 echo "[INFO] Converting SAM to sorted BAM..."
-samtools view -bS "${OUTPREFIX}.sam" | samtools sort -o "${OUTPREFIX}.sorted.bam"
-samtools index "${OUTPREFIX}.sorted.bam"
+samtools view -bS "${OUTDIR}/${OUTPREFIX}.sam" | samtools sort -o "${OUTDIR}/${OUTPREFIX}.sorted.bam"
+samtools index "${OUTDIR}/${OUTPREFIX}.sorted.bam"
 
 # --- Coverage and Depth --- #
 echo "[INFO] Calculating per-base depth..."
-samtools depth -a "${OUTPREFIX}.sorted.bam" > "${OUTPREFIX}.depth.txt"
+samtools depth -a "${OUTDIR}/${OUTPREFIX}.sorted.bam" > "${OUTDIR}/${OUTPREFIX}.depth.txt"
 
 echo "[INFO] Calculating average depth and breadth of coverage..."
-TOTAL_BASES=$(awk '{sum += 1} END {print sum}' "${OUTPREFIX}.depth.txt")
-TOTAL_COVERED=$(awk '$3 > 0 {sum += 1} END {print sum}' "${OUTPREFIX}.depth.txt")
-TOTAL_DEPTH=$(awk '{sum += $3} END {print sum}' "${OUTPREFIX}.depth.txt")
+TOTAL_BASES=$(awk '{sum += 1} END {print sum}' "${OUTDIR}/${OUTPREFIX}.depth.txt")
+TOTAL_COVERED=$(awk '$3 > 0 {sum += 1} END {print sum}' "${OUTDIR}/${OUTPREFIX}.depth.txt")
+TOTAL_DEPTH=$(awk '{sum += $3} END {print sum}' "${OUTDIR}/${OUTPREFIX}.depth.txt")
 
 if [ "$TOTAL_BASES" -gt 0 ]; then
     AVG_DEPTH=$(echo "scale=2; $TOTAL_DEPTH / $TOTAL_BASES" | bc)
@@ -105,30 +109,25 @@ echo "[RESULT] Average depth: ${AVG_DEPTH}x"
 echo "[RESULT] Breadth of coverage: ${COVERAGE_PERCENT}%"
 
 # Save summary
-echo -e "Average_Depth\tBreadth_of_Coverage(%)" > "${OUTPREFIX}.coverage_summary.txt"
-echo -e "${AVG_DEPTH}\t${COVERAGE_PERCENT}" >> "${OUTPREFIX}.coverage_summary.txt"
+echo -e "Average_Depth\tBreadth_of_Coverage(%)" > "${OUTDIR}/${OUTPREFIX}.coverage_summary.txt"
+echo -e "${AVG_DEPTH}\t${COVERAGE_PERCENT}" >> "${OUTDIR}/${OUTPREFIX}.coverage_summary.txt"
 
 # --- Variant Calling --- #
 echo "[INFO] Calling variants with bcftools..."
-bcftools mpileup -Ou -f "$REF" "${OUTPREFIX}.sorted.bam" | \
-    bcftools call -mv -Ob -o "${OUTPREFIX}.bcf"
-bcftools view "${OUTPREFIX}.bcf" > "${OUTPREFIX}.vcf"
-
-# --- Compress Output Files --- #
-echo "[INFO] Compressing output files..."
-gzip -f "${OUTPREFIX}.sam" \
-        "${OUTPREFIX}.depth.txt" \
-        "${OUTPREFIX}.coverage_summary.txt" \
-        "${OUTPREFIX}.vcf"
+bcftools mpileup -Ou -f "$REF" "${OUTDIR}/${OUTPREFIX}.sorted.bam" | \
+    bcftools call -mv -Ob -o "${OUTDIR}/${OUTPREFIX}.bcf"
+bcftools view "${OUTDIR}/${OUTPREFIX}.bcf" > "${OUTDIR}/${OUTPREFIX}.vcf"
 
 # --- Done --- #
 echo "============================================"
 echo "      Pipeline completed successfully!       "
 echo "============================================"
-echo "  Output files (compressed):"
-echo "    - Sorted BAM: ${OUTPREFIX}.sorted.bam"
-echo "    - Depth file: ${OUTPREFIX}.depth.txt.gz"
-echo "    - Coverage summary: ${OUTPREFIX}.coverage_summary.txt.gz"
-echo "    - VCF: ${OUTPREFIX}.vcf.gz"
-echo "    - SAM: ${OUTPREFIX}.sam.gz"
+echo "  Output files (uncompressed):"
+echo "    - SAM: ${OUTDIR}/${OUTPREFIX}.sam"
+echo "    - Sorted BAM: ${OUTDIR}/${OUTPREFIX}.sorted.bam"
+echo "    - BAM Index: ${OUTDIR}/${OUTPREFIX}.sorted.bam.bai"
+echo "    - Depth file: ${OUTDIR}/${OUTPREFIX}.depth.txt"
+echo "    - Coverage summary: ${OUTDIR}/${OUTPREFIX}.coverage_summary.txt"
+echo "    - VCF: ${OUTDIR}/${OUTPREFIX}.vcf"
+echo "    - BCF: ${OUTDIR}/${OUTPREFIX}.bcf"
 echo "    - Log: ${LOGFILE}"
