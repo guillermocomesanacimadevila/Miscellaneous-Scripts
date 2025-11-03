@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Academic References</title>
+  <meta name="color-scheme" content="light dark" />
+  <style>
+    :root{--bg:#ffffff;--fg:#111;--muted:#555;--accent:#0f6fff;--card:#f7f7f8;--border:#e6e6ea}
+    @media (prefers-color-scheme: dark){
+      :root{--bg:#0b0b0c;--fg:#f3f3f4;--muted:#b8b8bd;--accent:#6aa4ff;--card:#141418;--border:#22222a}
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;background:var(--bg);color:var(--fg)}
+    .wrap{max-width:760px;margin:48px auto;padding:0 20px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
+    h1{margin:0 0 12px;font-size:28px}
+    p.lead{margin:0 0 18px;color:var(--muted)}
+    ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+    li a{display:block;padding:14px 16px;border:1px solid var(--border);border-radius:12px;text-decoration:none;color:var(--fg);background:#fff0}
+    li a:hover{border-color:var(--accent);box-shadow:0 6px 16px rgba(15,111,255,.12)}
+    small{color:var(--muted);display:block;margin-top:8px;word-break:break-all}
+    .row{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 20px}
+    button{appearance:none;border:1px solid var(--accent);background:var(--accent);color:#fff;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:600}
+    button.secondary{background:transparent;color:var(--accent)}
+    footer{margin-top:16px;color:var(--muted);font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Academic References</h1>
+      <p class="lead">Tap a link below, or <strong>Open all (5)</strong>.</p>
+
+      <div class="row">
+        <button id="openAll">Open all (5)</button>
+        <button class="secondary" id="copyAll">Copy all links</button>
+      </div>
+
+      <ul id="links">
+        <li>
+          <a href="https://pubmed.ncbi.nlm.nih.gov/39298993/" target="_blank" rel="noopener">PubMed article
+            <small>https://pubmed.ncbi.nlm.nih.gov/39298993/</small>
+          </a>
+        </li>
+        <li>
+          <a href="https://mentalhealth.bmj.com/content/28/1/1" target="_blank" rel="noopener">BMJ Mental Health
+            <small>https://mentalhealth.bmj.com/content/28/1/1</small>
+          </a>
+        </li>
+        <li>
+          <a href="https://www.nature.com/articles/s41588-019-0358-2" target="_blank" rel="noopener">Nature Genetics article
+            <small>https://www.nature.com/articles/s41588-019-0358-2</small>
+          </a>
+        </li>
+        <li>
+          <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8327826/" target="_blank" rel="noopener">PMC article
+            <small>https://pmc.ncbi.nlm.nih.gov/articles/PMC8327826/</small>
+          </a>
+        </li>
+        <li>
+          <a href="https://www.biorxiv.org/content/10.1101/2025.06.25.661532v1" target="_blank" rel="noopener">bioRxiv preprint
+            <small>https://www.biorxiv.org/content/10.1101/2025.06.25.661532v1</small>
+          </a>
+        </li>
+      </ul>
+
+      <footer>
+        Tip: mobile browsers may ask permission to open multiple tabs.
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    const urls = [
+      "https://pubmed.ncbi.nlm.nih.gov/39298993/",
+      "https://mentalhealth.bmj.com/content/28/1/1",
+      "https://www.nature.com/articles/s41588-019-0358-2",
+      "https://pmc.ncbi.nlm.nih.gov/articles/PMC8327826/",
+      "https://www.biorxiv.org/content/10.1101/2025.06.25.661532v1",
+    ];
+    document.getElementById('openAll').addEventListener('click', () => {
+      // Must be triggered by a user gesture to avoid popup blocking as much as possible
+      for (const u of urls) window.open(u, '_blank', 'noopener');
+    });
+    document.getElementById('copyAll').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(urls.join('\n'));
+      const btn = document.getElementById('copyAll');
+      const old = btn.textContent;
+      btn.textContent = "Copied!";
+      setTimeout(() => btn.textContent = old, 1200);
+    });
+  </script>
+</body>
+</html>
