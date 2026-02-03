@@ -2,26 +2,31 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib_venn import venn2
 
-path = "/Users/c24102394/Desktop/bivariate/AD_LON/AD_LON.csv"
+# ad_colour = ""
+# scz_colour = ""
+# lon_colour = ""
+
+path = "/Users/c24102394/Desktop/bivariate/AD_SCZ/AD_SCZ.csv"
 df = pd.read_csv(path, sep="\t")
-
-nc1 = float(df.loc[0,"nc1@p9"])
-nc2 = float(df.loc[0,"nc2@p9"])
-nc12 = float(df.loc[0,"nc12@p9"])
-
+nc1 = float(df.loc[0,"nc1@p9"]) # number of causal variants in trait 1
+nc2 = float(df.loc[0,"nc2@p9"]) # n of causal variants on trait 2
+nc12 = float(df.loc[0,"nc12@p9"]) # t1 and t2 shared number of CVs
 onlyA = nc1
 onlyB = nc2
 both = nc12
-#scale = 4_000.0
-scale = 1_450_000.0
+#scale = 1800.0
+scale2 = 60.0
+#scale3 = 25.0
+scale = 2_550_000.0
+#scale4 = 1500.0
 
 plt.close("all")
 fig, ax = plt.subplots(figsize=(1.8, 1.8), dpi=300)
 ax.set_axis_off()
 
 v = venn2(
-     subsets=(onlyA*scale, onlyB, both), # onlyA*scale
-     set_labels=("AD", "LON"),
+     subsets=(onlyA*scale, onlyB, both*scale2), # onlyA*scale
+     set_labels=("AD", "SCZ"),
      ax=ax
 )
 
@@ -53,5 +58,5 @@ for p in [pA, pB, pAB]:
         p.set_alpha(0.60)
 
 fig.subplots_adjust(left=0.02, right=0.98, bottom=0.02, top=0.98)
-plt.savefig("venns.png", bbox_inches="tight", transparent=True)
+plt.savefig("venns.pdf", bbox_inches="tight", transparent=True, dpi=600)
 plt.show()
