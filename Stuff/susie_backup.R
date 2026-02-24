@@ -69,6 +69,24 @@ run_susie <- function(df, R, L=1, n, estimate_residual_variance=FALSE, max_iter=
   list(fit = fit, cs = cs_df)
 }
 
+get_cs95 <- function(df, pip, level = 0.95) {
+  o <- order(pip, decreasing = TRUE)
+  pip_sorted <- pip[o]
+  cum <- cumsum(pip_sorted)
+  k <- which(cum >= level)[1]
+  if (is.na(k)) k <- length(pip_sorted)
+  idx <- o[1:k]
+  
+  data.frame(
+    SNP = df$SNP[idx],
+    BP  = df$BP[idx],
+    P   = df$P[idx],
+    PIP = pip[idx],
+    CUM_PIP = cumsum(pip[idx]),
+    stringsAsFactors = FALSE
+  )
+}
+
 res <- run_susie(
   df, 
   R,
@@ -84,6 +102,8 @@ pip_df <- data.frame(
   stringsAsFactors = FALSE
 )
 
+res_cs95 <- get_cs95(df, res$fit$pip, level = 0.95)
+write.table(res_cs95, file.path(out_dir, paste0("cs95_", pheno_id, ".tsv")), sep = "\t", row.names = FALSE, quote = FALSE)
 pip_df <- pip_df[order(pip_df$PIP, decreasing=TRUE), ]
 saveRDS(res$fit, file.path(out_dir, paste0("res_", pheno_id, ".rds")))
 write.table(res$cs, file.path(out_dir, paste0("cs_", pheno_id, ".tsv")), sep="\t", row.names=FALSE, quote=FALSE)
